@@ -18,7 +18,7 @@ state<br>
 stream<br>
 
 #### Methods
-isTypeSupported()<br>
+isTypeSupported() **audio/mpeg is the only supported MIME type.**<br>
 pause()<br>
 requestData()<br>
 resume()<br>
