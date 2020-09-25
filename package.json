@@ -1,0 +1,21 @@
+{
+  "name": "mp3-mediarecorder-polyfill",
+  "version": "1.0.0",
+  "description": "A MediaRecorder polyfill with MP3 encoding support",
+  "main": "index.js",
+  "scripts": {
+    "prod": "webpack --mode production",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Henri MEDOT <henri.medot[AT]absyx[DOT]fr>",
+  "license": "LGPL",
+  "devDependencies": {
+    "@babel/core": "^7.11.5",
+    "@babel/preset-env": "^7.11.5",
+    "babel-loader": "^8.1.0",
+    "eslint": "^7.9.0",
+    "terser-webpack-plugin": "^4.1.0",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
+  }
+}
