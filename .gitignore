@@ -1,0 +1,6 @@
+.vscode/keybindings.json
+.vscode/settings.json
+node_modules
+package-lock.json
+globals.d.ts
+.vscode/tasks.json

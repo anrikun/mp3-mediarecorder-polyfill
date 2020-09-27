@@ -11,15 +11,16 @@ function createWorker(fn) {
 class MediaRecorder {
   constructor(stream) {
     let recorder = this;
+
     recorder.state = 'inactive';
     recorder.stream = stream;
 
     recorder._em = document.createDocumentFragment();
 
-    recorder._encoder = createWorker(Encoder);
-    recorder._encoder.onmessage = function(e) {
+    recorder._wo = createWorker(Encoder);
+    recorder._wo.onmessage = function(e) {
       let data = e.data;
-      recorder._data.push(new Blob(data[1]));
+      recorder._da.push(new Blob(data[1]));
       if (data[0]) {
         recorder._raiseDataAvailable();
         recorder._raise('stop');
@@ -52,17 +53,18 @@ class MediaRecorder {
     let recorder = this;
 
     if (recorder.state !== 'inactive') {
-      recorder._raiseError();
-      return;
+      return recorder._raiseError();
     }
 
     recorder.state = 'recording';
 
-    recorder._tl = recorder.stream.getTracks()[0].addEventListener('ended', () => {
+    let listener = () => {
       if (recorder.state !== 'inactive') {
         recorder.stop();
       }
-    });
+    };
+    recorder._li = listener;
+    recorder.stream.getTracks()[0].addEventListener('ended', listener);
 
     if (!context) {
       context = new AudioContext();
@@ -70,25 +72,25 @@ class MediaRecorder {
     if (!processor) {
       processor = context.createScriptProcessor(0, 1, 1);
     }
-    recorder._input = context.createMediaStreamSource(recorder.stream);
+    recorder._in = context.createMediaStreamSource(recorder.stream);
 
-    recorder._data = [];
+    recorder._da = [];
 
-    recorder._encoder.postMessage([0, context.sampleRate]);
+    recorder._wo.postMessage([0, context.sampleRate]);
     processor.onaudioprocess = function (e) {
       if (recorder.state === 'recording') {
         let buffer = e.inputBuffer.getChannelData(0).buffer;
-        recorder._encoder.postMessage([1, buffer], [buffer]);
+        recorder._wo.postMessage([1, buffer], [buffer]);
       }
     }
 
-    recorder._input.connect(processor);
+    recorder._in.connect(processor);
     processor.connect(context.destination);
 
     recorder._raise('start');
 
     if (timeslice) {
-      recorder._slicing = setInterval(() => {
+      recorder._si = setInterval(() => {
         if (recorder.state === 'recording') {
           recorder._raiseDataAvailable();
         }
@@ -100,51 +102,46 @@ class MediaRecorder {
     let recorder = this;
 
     if (recorder.state === 'inactive') {
-      recorder._raiseError();
-      return;
+      return recorder._raiseError();
     }
 
     recorder.state = 'inactive';
 
-    recorder._input.disconnect();
-    if (recorder._slicing) {
-      clearInterval(recorder._slicing);
-      delete recorder._slicing;
+    recorder._in.disconnect();
+    if (recorder._si) {
+      clearInterval(recorder._si);
+      recorder._si = null;
     }
 
-    recorder.stream.removeEventListener('ended', recorder._tl);
+    recorder.stream.removeEventListener('ended', recorder._li);
 
-    recorder._encoder.postMessage([2]);
+    recorder._wo.postMessage([2]);
   }
 
   pause() {
-    let recorder= this;
+    let recorder = this;
     if (recorder.state === 'inactive') {
-      recorder._raiseError();
-      return;
+      return recorder._raiseError();
     }
     recorder.state = 'paused';
     recorder._raise('pause');
   }
 
   resume() {
-    let recorder= this;
+    let recorder = this;
     if (recorder.state === 'inactive') {
-      recorder._raiseError();
-      return;
+      return recorder._raiseError();
     }
     recorder.state = 'recording';
     recorder._raise('resume');
   }
 
   requestData() {
-    let recorder= this;
-    if (recorder.state === 'recording') {
-      recorder._raiseDataAvailable();
+    let recorder = this;
+    if (recorder.state !== 'recording') {
+      return recorder._raiseError();
     }
-    else {
-      recorder._raiseError();
-    }
+    recorder._raiseDataAvailable();
   }
 
   addEventListener(...args) {
@@ -162,8 +159,8 @@ class MediaRecorder {
   _raiseDataAvailable() {
     let recorder = this;
     let e = new Event('dataavailable');
-    e.data = new Blob(recorder._data, {type: recorder.mimeType});
-    recorder._data = [];
+    e.data = new Blob(recorder._da, {type: recorder.mimeType});
+    recorder._da = [];
     recorder._em.dispatchEvent(e);
   }
 
